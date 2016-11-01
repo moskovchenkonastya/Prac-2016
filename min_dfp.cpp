@@ -21,11 +21,23 @@
 using namespace std;
 
 double my_function(vector<double> &x){
-    return x[0] * x[0] + x[1] * x[1];
+    double r = 0;
+    
+    for (double v : x) {
+        r = r +   v * v;
+    }
+    return r;
 }
 
 double barrier_function(vector<double> &x){
-    return 1.0 /(16.0 * x[0]) + 1.0 /(16.0 * x[1]) ;
+    
+    double r = 0;
+    
+    for (double v : x) {
+        r = r +   1.0 /(1.0 * v);
+    }
+    return r;
+    
 }
 
 double new_function(vector<double> &x, int k){
@@ -35,12 +47,14 @@ double new_function(vector<double> &x, int k){
 vector<double> func_grad(vector<double> &x, int k){
     
     vector<double> grad(x.size());
-    grad[0] = 2.0 * x[0] - (1.0/(k * k)) * (1.0/pow(x[0], 2.0));
-    grad[1] = 2.0 * x[1] - (1.0/(k * k)) * (1.0/pow(x[1], 2.0));
+    
+    for(int i  =0; i< x.size(); ++i) {
+        grad[i] = 2.0 * x[i] - (1.0/(k * k)) * (1.0/pow(x[i], 2.0));
+        
+    }
     
     return grad;
 }
-
 
 vector<double> vector_alpha(vector<double> &x, double alpha){
     vector<double> result(x.size());
@@ -108,6 +122,17 @@ vector<double> matrix_vector(vector<vector<double> > &M, vector<double> &x){
     return result;
 }
 
+
+vector<vector<double> > copy_matrix(vector<vector<double> > &M){
+    vector<vector<double> > result(M.size(), vector<double>(M.size()));
+    
+    for (int i = 0; i < M.size(); ++i){
+        
+        result[i] = M[i];
+    }
+    return result;
+}
+
 double find_min(vector<double> &x, vector<double> &d, double a, double b, int count){
     
     double e = 0;
@@ -117,7 +142,7 @@ double find_min(vector<double> &x, vector<double> &d, double a, double b, int co
     vector<double> V_a2;
     
     while(fabs(b - a) >= eps) {
-        e = (b - a) * 1E-2 * 1E-3;
+        e = (b - a) * 0.001; // 1E-2 * 1E-3;
         x_1 = (b + a) / 2.0 - e;
         x_2 = (b + a) / 2.0 + e;
         
@@ -127,7 +152,10 @@ double find_min(vector<double> &x, vector<double> &d, double a, double b, int co
         V_a1 = vector_minus(x, V_a1);
         V_a2 = vector_minus(x, V_a2);
         
-        if (new_function(V_a1, count) > new_function(V_a2, count)){
+        double f1 = new_function(V_a1, count);
+        double f2 = new_function(V_a2, count);
+        
+        if (f1> f2){
             a = x_1;
         }else{
             b = x_2;
@@ -142,8 +170,7 @@ int main(){
     
     
     double alpha;
-    int i = 0;
-    int j = 0;
+
     int count = 0;
     double a = 0;
     double b = 1;
@@ -180,15 +207,7 @@ int main(){
     vector<vector<double> > dev_S(values.size(), vector<double>(values.size()));
     vector<vector<double> > tmp(values.size(), vector<double>(values.size()));
     
-    for (int i = 0; i < values.size(); ++i){
-        for (int j = 0; j < values.size(); ++j){
-            if (i == j){
-                S[i][j] = 1.0;
-            }else{
-                S[i][j] = 0.0;
-            }
-        }
-    }
+
     
     vector<double> X0;
     
@@ -197,21 +216,44 @@ int main(){
         x = values; /// почему x затирается при этом был size = 2 стал size = 1
         // а потом идут операции с не корректной размерностью
         X0 = values;
+
+        
+        //
+        for (int i = 0; i < values.size(); ++i){
+            for (int j = 0; j < values.size(); ++j){
+                if (i == j){
+                    S[i][j] = 1.0;
+                }else{
+                    S[i][j] = 0.0;
+                }
+            }
+        }
+        
         
         do{
+            
+            
+            
             a = 0;
             b = 1;
             
-            for (i = 0; i < x.size(); i++){
-                for (j = 0; j < x.size(); j++){
-                    tmp[i][j] = S[i][j];
-                }
-            }
+            tmp = copy_matrix(S);
             
+           
             
             old_x = x;
             // compulate gradient
             gradient = func_grad(x, count);
+            
+            d = matrix_vector(S, gradient);
+            
+            
+            alpha = find_min(x, d, a, b, count);
+          
+            
+            
+            
+            
             old_grad = gradient;
             // compulate d
             d = matrix_vector(S, gradient);
@@ -245,21 +287,14 @@ int main(){
             
         }while(fabs(new_function(x, count) - new_function(old_x, count)) > eps);
         
-        for (int i = 0; i < x.size(); ++i){
-            for (int j = 0; j < x.size(); ++j){
-                if (i==j){
-                    S[i][j] = 1.0;
-                }else{
-                    S[i][j] = 0.0;
-                }
-            }
-        }
         
         values = x;
         x.clear();
         
         
-    } while (abs(my_function(X0) - my_function(values)) > eps);
+    } while (fabs(my_function(X0) - my_function(values)) > eps);
+    
+    
     cout<< "Значение точки минимума:\n";
     cout<< "x_0 = "<< values[0]<<endl;
     cout<< "x_1 = "<< values[1]<<endl;
