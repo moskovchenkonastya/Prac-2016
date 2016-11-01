@@ -116,7 +116,7 @@ double find_min(vector<double> &x, vector<double> &d, double a, double b, int co
     vector<double> V_a1;
     vector<double> V_a2;
     
-    while(abs(b - a) >= eps) {
+    while(fabs(b - a) >= eps) {
         e = (b - a) * 1E-2 * 1E-3;
         x_1 = (b + a) / 2.0 - e;
         x_2 = (b + a) / 2.0 + e;
@@ -243,7 +243,7 @@ int main(){
             S = sub_matrix(dev_S, vec_mult);
             
             
-        }while(abs(new_function(x, count) - new_function(old_x, count)) > eps);
+        }while(fabs(new_function(x, count) - new_function(old_x, count)) > eps);
         
         for (int i = 0; i < x.size(); ++i){
             for (int j = 0; j < x.size(); ++j){
