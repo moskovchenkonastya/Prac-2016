@@ -14,29 +14,19 @@
 #include <cmath>
 
 
-#define eps 0.000001
+#define eps 0.001
 #define x0 1.0
 #define x1 0.5
 
 using namespace std;
 
 double my_function(vector<double> &x){
-    double r = 0;
-    
-    for (double v : x) {
-        r = r +   v * v;
-    }
-    return r;
+    return x[0] + x[1];
 }
 
 double barrier_function(vector<double> &x){
     
-    double r = 0;
-    
-    for (double v : x) {
-        r = r +   1.0 /(1.0 * v);
-    }
-    return r;
+    return 1.0 /(2.0 * x[0]) + 1.0 /(2.0 * x[1]) ;
     
 }
 
@@ -48,8 +38,8 @@ vector<double> func_grad(vector<double> &x, int k){
     
     vector<double> grad(x.size());
     
-    for(int i  =0; i< x.size(); ++i) {
-        grad[i] = 2.0 * x[i] - (1.0/(k * k)) * (1.0/pow(x[i], 2.0));
+    for(int i = 0; i < x.size(); ++i) {
+        grad[i] = 1 - (1.0/(k * k)) * (1.0/pow(x[i], 2.0));
         
     }
     
@@ -72,8 +62,9 @@ vector<double> vector_minus(vector<double> &x, vector<double> &y){
 
 double vector_scalar(vector<double> &x, vector<double> &y){
     double pr = 0;
-    for (int i = 0; i < x.size(); ++i)
+    for (int i = 0; i < x.size(); ++i){
         pr += x[i] * y[i];
+    }
     return pr;
 }
 
@@ -179,7 +170,7 @@ int main(){
     vector<double> gradient;
     vector<vector<double> > matrix;
     //vector<vector<double> > tmp;
-    const double arr0[] = {x0,x1};
+    const double arr0[] = {0,0};
     vector<double> x;
     x.assign(arr0, arr0 + sizeof arr0 / sizeof * arr0);
     
@@ -196,9 +187,9 @@ int main(){
     vector<double> m_v(x.size());
     
     // initial estimate x0
-
+    const double arr1[] = {x0,x1};
     vector<double> values;
-    values.assign(arr0, arr0 + sizeof arr0 / sizeof * arr0);
+    values.assign(arr1, arr1 + sizeof arr1 / sizeof * arr1);
     
 
     // select a positive definite matrix S0
@@ -245,7 +236,7 @@ int main(){
             // compulate gradient
             gradient = func_grad(x, count);
             
-            d = matrix_vector(S, gradient);
+            // d = matrix_vector(S, gradient);
             
             
             alpha = find_min(x, d, a, b, count);
@@ -282,7 +273,7 @@ int main(){
             vec_scalar = vector_scalar(m_v, delta_d);
             dev_S = divide_matrix(vec_mult, vec_scalar);
             
-            S = sub_matrix(dev_S, vec_mult);
+            S = sub_matrix(S, dev_S);
             
             
         }while(fabs(new_function(x, count) - new_function(old_x, count)) > eps);
