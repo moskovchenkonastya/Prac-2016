@@ -14,9 +14,9 @@
 #include <cmath>
 
 
-#define eps 0.001
-#define x0 1.0
-#define x1 0.5
+#define eps 0.0001
+#define x0 10.0
+#define x1 50.0
 
 using namespace std;
 
@@ -146,7 +146,7 @@ double find_min(vector<double> &x, vector<double> &d, double a, double b, int co
         double f1 = new_function(V_a1, count);
         double f2 = new_function(V_a2, count);
         
-        if (f1> f2){
+        if (f1 > f2){
             a = x_1;
         }else{
             b = x_2;
@@ -167,6 +167,12 @@ int main(){
     double b = 1;
     double vec_scalar = 0;
     
+    double e = 0;
+    double x_1 = 0;
+    double x_2 = 0;
+    vector<double> V_a1;
+    vector<double> V_a2;
+    
     vector<double> gradient;
     vector<vector<double> > matrix;
     //vector<vector<double> > tmp;
@@ -179,6 +185,10 @@ int main(){
     
     vector<double> d;
     d.assign(arr0, arr0 + sizeof arr0  / sizeof * arr0);
+    
+    double norm;
+   
+    
     vector<double> old_x = x;
     vector<double> old_grad = gradient;
     
@@ -229,30 +239,48 @@ int main(){
             b = 1;
             
             tmp = copy_matrix(S);
-            
-           
-            
-            old_x = x;
+     
             // compulate gradient
             gradient = func_grad(x, count);
             
-            // d = matrix_vector(S, gradient);
-            
-            
-            alpha = find_min(x, d, a, b, count);
-          
-            
-            
-            
-            
+            old_x = x;
             old_grad = gradient;
+            
             // compulate d
             d = matrix_vector(S, gradient);
             // looking for the minimum of F(x - alpha * d) using the method of one-dimensional optimization
             
-            alpha = find_min(x, d, a, b, count);
             
-            //old_x = vector_alpha(d, alpha);
+            do
+                {
+                    
+                    e = (b - a) * 0.000001;
+                    x_1 = (a + b) / 2.0 - e;
+                    x_2 = (a + b) / 2.0 + e;
+                    V_a1 = vector_alpha(d, x_1);
+                    V_a2 = vector_alpha(d, x_2);
+                    
+                    V_a1 = vector_minus(x, V_a1);
+                    V_a2 = vector_minus(x, V_a2);
+                    double f1 = new_function(V_a1, count);
+                    double f2 = new_function(V_a2, count);
+                    
+                    if (f1 > f2){
+                        a = x_1;
+                    }else{
+                        b = x_2;
+                    }
+                    
+                    
+                } while ((b - a) > eps);
+            
+            if (new_function(V_a1, count) > new_function(V_a2, count)){
+                alpha = x_1;
+            } else {
+                alpha = x_2;
+            }
+            
+            
             y = vector_alpha(d, alpha);
             x = vector_minus(x, y);
             
@@ -275,8 +303,10 @@ int main(){
             
             S = sub_matrix(S, dev_S);
             
+            norm = sqrt(gradient[0] * gradient[0] + gradient[1] * gradient[1]);
             
-        }while(fabs(new_function(x, count) - new_function(old_x, count)) > eps);
+            
+        }while(fabs(new_function(x, count) - new_function(old_x, count)) > eps && count < 1E6 && norm >= eps);
         
         
         values = x;
